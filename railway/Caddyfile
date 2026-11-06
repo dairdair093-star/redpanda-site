@@ -1,0 +1,11 @@
+{
+	admin off
+}
+:{$PORT:8080} {
+	root * /srv
+	encode zstd gzip
+	@media path /assets/*
+	header @media Cache-Control "public, max-age=604800"
+	header /index.html Cache-Control "no-cache"
+	file_server
+}

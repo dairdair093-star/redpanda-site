@@ -1,0 +1,924 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>RedPanda Redesign</title>
+<meta name="description" content="RedPanda — ИИ-платформа поддержки восстановления от зависимости. Концепт редизайна.">
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="alternate" hreflang="ru" href="/"><link rel="alternate" hreflang="en" href="/en/">
+<link rel="preload" as="image" href="assets/panda-poster.jpg">
+<style>
+:root{
+  --bg:#030812;
+  --bg-2:#06101c;
+  --bg-3:#0c1b2a;
+  --ink:#f4f7fb;
+  --muted:#a5b2c2;
+  --dim:#5d6c7d;
+  --cyan:#82e7ee;
+  --cyan-2:#2ad7e4;
+  --orange:#ff4800;
+  --orange-2:#ff7a3d;
+  --line:rgba(171,194,199,.14);
+  --line-2:rgba(171,194,199,.26);
+  --glass:rgba(10,22,36,.55);
+  --display:"Unbounded", "Manrope", system-ui, sans-serif;
+  --sans:"Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, monospace;
+  --ease:cubic-bezier(.16,1,.3,1);
+  --ease-io:cubic-bezier(.76,0,.24,1);
+  --gutter:clamp(16px,4vw,56px);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{background:var(--bg);-webkit-text-size-adjust:100%}
+html.lenis,html.lenis body{height:auto}
+.lenis.lenis-smooth{scroll-behavior:auto!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.6;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+body.is-loading{overflow:hidden}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+img,video{display:block;max-width:100%}
+::selection{background:var(--orange);color:#fff}
+
+/* ---------- grain ---------- */
+.grain{position:fixed;inset:0;pointer-events:none;z-index:90;opacity:.06;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ---------- preloader ---------- */
+.loader{position:fixed;inset:0;z-index:200;background:var(--bg);display:grid;place-items:center;
+  transition:clip-path 1.3s var(--ease-io);clip-path:inset(0 0 0 0)}
+.loader.out{clip-path:inset(0 0 100% 0)}
+.loader-inner{display:flex;flex-direction:column;align-items:center;gap:28px}
+.loader-mark{position:relative;width:96px;height:102px}
+.loader-mark img{width:100%;height:100%;object-fit:contain;filter:grayscale(1) brightness(.35);}
+.loader-mark .fill{position:absolute;inset:0;clip-path:inset(100% 0 0 0);transition:clip-path .25s linear}
+.loader-mark .fill img{filter:none}
+.loader-mark::after{content:"";position:absolute;inset:-40px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,72,0,.25),transparent 60%);filter:blur(10px);opacity:.8;animation:pulse 2.2s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.35;transform:scale(.9)}}
+.loader-meta{display:flex;gap:18px;font-family:var(--mono);font-size:11px;letter-spacing:.24em;color:var(--muted);text-transform:uppercase}
+.loader-meta b{color:var(--ink);font-weight:500;min-width:3.2ch;text-align:right}
+
+/* ---------- header ---------- */
+.header{position:fixed;inset:0 0 auto 0;z-index:60;padding:22px var(--gutter);display:flex;align-items:center;justify-content:space-between;gap:24px;
+  transition:padding .5s var(--ease),background .5s var(--ease),border-color .5s;border-bottom:1px solid transparent}
+.header.scrolled{padding-top:14px;padding-bottom:14px;background:rgba(3,8,18,.9);border-color:var(--line)}
+.brand{display:flex;align-items:center;gap:12px;font-family:var(--display);font-weight:500;font-size:21px;letter-spacing:-.02em}
+.brand img{width:34px;height:36px}
+.brand span{color:var(--orange)}
+.nav{display:flex;gap:6px;padding:6px;border:1px solid var(--line);border-radius:999px;background:rgba(6,16,28,.72)}
+.nav a{padding:8px 16px;border-radius:999px;font-size:13.5px;color:var(--muted);transition:color .3s,background .3s}
+.nav a:hover{color:var(--ink);background:rgba(255,255,255,.06)}
+.header-right{display:flex;align-items:center;gap:10px}
+.lang{display:flex;padding:4px;border:1px solid var(--line);border-radius:999px;font-family:var(--mono);font-size:11px;letter-spacing:.12em}
+.lang a{padding:6px 11px;border-radius:999px;color:var(--muted)}
+.lang a.on{background:rgba(130,231,238,.12);color:var(--cyan)}
+
+/* ---------- hero ---------- */
+.hero{position:relative;min-height:100svh;min-height:100vh;display:flex;align-items:flex-end;overflow:hidden;isolation:isolate}
+@supports(height:100svh){.hero{min-height:100svh}}
+.hero-media{position:absolute;inset:0;z-index:-2;overflow:hidden}
+.hero-media .stage{position:absolute;inset:-3%;transform:scale(1.22);filter:blur(14px) brightness(.4);
+  transition:transform 3.2s var(--ease),filter 2.6s var(--ease);will-change:transform}
+.ready .hero-media .stage.settled{filter:none}
+.hero-dim{position:absolute;inset:0;z-index:-1;background:var(--bg);opacity:0;pointer-events:none;will-change:opacity}
+.ready .hero-media .stage{transform:scale(1);filter:blur(0) brightness(1)}
+.hero-media video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:72% 28%}
+.hero-media .talk{opacity:0;transition:opacity .6s ease}
+.talking .hero-media .talk{opacity:1}
+.hero-shade{position:absolute;inset:0;z-index:-1;pointer-events:none;
+  background:
+   linear-gradient(90deg,var(--bg) 0%,rgba(3,8,18,.92) 22%,rgba(3,8,18,.55) 42%,rgba(3,8,18,0) 62%),
+   linear-gradient(0deg,var(--bg) 0%,rgba(3,8,18,.6) 18%,rgba(3,8,18,0) 42%),
+   linear-gradient(180deg,rgba(3,8,18,.7) 0%,rgba(3,8,18,0) 18%)}
+.hero-glow{position:absolute;z-index:-1;pointer-events:none;width:46vmax;height:46vmax;margin:-23vmax 0 0 -23vmax;border-radius:50%;left:0;top:0;will-change:transform;
+  background:radial-gradient(circle,rgba(130,231,238,.11),transparent 62%);opacity:0;transition:opacity .6s}
+.hero:hover .hero-glow{opacity:1}
+#embers{position:absolute;inset:0;z-index:-1;pointer-events:none;width:100%;height:100%}
+
+.panda-hit{position:absolute;z-index:0;left:52%;right:6%;top:9%;bottom:4%;border:0;padding:0;background:none;cursor:pointer;border-radius:40% 40% 18% 18%;-webkit-tap-highlight-color:transparent}
+.panda-hit::after{content:"";position:absolute;inset:6% 12%;border-radius:inherit;background:radial-gradient(ellipse at 50% 30%,rgba(130,231,238,.10),transparent 65%);opacity:0;transition:opacity .5s var(--ease)}
+.panda-hit:hover::after,.panda-hit:focus-visible::after{opacity:1}
+.panda-hit:focus-visible{outline:2px solid rgba(130,231,238,.6);outline-offset:-6px}
+.talking .panda-hit::after{opacity:0}
+.hero-inner{pointer-events:none}.hero-inner>*{pointer-events:auto}
+.hero-inner{width:100%;padding:120px var(--gutter) clamp(28px,6vh,64px);display:grid;grid-template-columns:minmax(0,640px) 1fr;align-items:end;gap:40px}
+.eyebrow{display:flex;align-items:center;gap:14px;font-family:var(--mono);font-size:11.5px;letter-spacing:.26em;text-transform:uppercase;color:var(--cyan)}
+.eyebrow::before{content:"";width:44px;height:1px;background:currentColor;transform-origin:left;transform:scaleX(0);transition:transform 1.2s var(--ease) .9s}
+.ready .eyebrow::before{transform:scaleX(1)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--cyan);box-shadow:0 0 0 0 rgba(130,231,238,.6);animation:ping 2s infinite}
+@keyframes ping{0%{box-shadow:0 0 0 0 rgba(130,231,238,.55)}80%,100%{box-shadow:0 0 0 10px rgba(130,231,238,0)}}
+
+h1{font-family:var(--display);font-weight:400;font-size:clamp(38px,5.6vw,84px);line-height:1.02;letter-spacing:-.035em;margin:26px 0 26px}
+.line{display:block;overflow:hidden;padding-bottom:.08em;margin-bottom:-.08em}
+.line>span{display:inline-block;transform:translateY(110%) rotate(4deg);transform-origin:left bottom;transition:transform 1.4s var(--ease)}
+.ready .line>span{transform:none}
+.ready .line:nth-child(2)>span{transition-delay:.12s}
+.ready .line:nth-child(3)>span{transition-delay:.24s}
+.accent{background:linear-gradient(100deg,var(--orange) 0%,var(--orange-2) 40%,#ffd2b8 50%,var(--orange-2) 60%,var(--orange) 100%);background-size:250% 100%;
+  -webkit-background-clip:text;background-clip:text;color:transparent;animation:shine 6s ease-in-out infinite 3s}
+@keyframes shine{0%,100%{background-position:100% 0}50%{background-position:0 0}}
+
+.fade{opacity:0;transform:translateY(22px);transition:opacity 1.2s var(--ease),transform 1.2s var(--ease)}
+.ready .fade{opacity:1;transform:none}
+.ready .d1{transition-delay:.45s}.ready .d2{transition-delay:.6s}.ready .d3{transition-delay:.75s}.ready .d4{transition-delay:.9s}.ready .d5{transition-delay:1.05s}
+
+.lead{font-size:clamp(16px,1.25vw,18.5px);color:var(--muted);max-width:30em}
+.lead strong{color:var(--ink);font-weight:500}
+
+.seg{position:relative;display:inline-flex;margin-top:30px;padding:5px;border-radius:999px;border:1px solid var(--line-2);background:rgba(6,16,28,.78)}
+.seg button{position:relative;z-index:1;padding:11px 22px;font-size:14px;font-weight:500;color:var(--muted);transition:color .4s}
+.seg button[aria-pressed="true"]{color:var(--ink)}
+.seg .pill{position:absolute;z-index:0;top:5px;bottom:5px;left:5px;border-radius:999px;background:linear-gradient(180deg,rgba(130,231,238,.2),rgba(130,231,238,.08));border:1px solid rgba(130,231,238,.35);box-shadow:0 0 24px rgba(42,215,228,.18) inset;transition:transform .6s var(--ease),width .6s var(--ease)}
+.aud-text{min-height:3.4em;margin-top:16px;color:var(--muted);max-width:28em;font-size:15px;position:relative}
+.aud-text p{transition:opacity .5s var(--ease),transform .5s var(--ease)}
+.aud-text p.swap{opacity:0;transform:translateY(8px);filter:blur(4px)}
+
+.cta-row{display:flex;flex-wrap:wrap;align-items:center;gap:14px 22px;margin-top:22px}
+.btn{position:relative;display:inline-flex;align-items:center;gap:14px;padding:19px 30px;border-radius:999px;font-weight:600;font-size:15.5px;
+  background:var(--orange);color:#fff;overflow:hidden;isolation:isolate;
+  box-shadow:0 10px 40px -10px rgba(255,72,0,.7),inset 0 1px 0 rgba(255,255,255,.25);transition:box-shadow .5s var(--ease)}
+.btn::before{content:"";position:absolute;inset:0;z-index:-1;background:radial-gradient(120px circle at var(--bx,50%) var(--by,50%),rgba(255,255,255,.35),transparent 60%);opacity:0;transition:opacity .4s}
+.btn:hover::before{opacity:1}
+.btn:hover{box-shadow:0 18px 60px -12px rgba(255,72,0,.9),inset 0 1px 0 rgba(255,255,255,.3)}
+.btn .arr{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.18);transition:transform .5s var(--ease)}
+.btn:hover .arr{transform:rotate(45deg)}
+.btn-ghost{display:inline-flex;align-items:center;gap:10px;padding:18px 4px;font-weight:500;font-size:15px;color:var(--ink);border-bottom:1px solid transparent;position:relative}
+.btn-ghost::after{content:"";position:absolute;left:4px;right:4px;bottom:12px;height:1px;background:var(--line-2);transform-origin:right;transition:transform .5s var(--ease)}
+.btn-ghost:hover::after{background:var(--cyan);transform:scaleX(1)}
+.btn-ghost:hover{color:var(--cyan)}
+.note{margin-top:14px;font-size:13px;color:var(--dim)}
+
+.hero-foot{position:absolute;left:0;right:0;bottom:0;height:1px;background:linear-gradient(90deg,transparent,var(--line-2),transparent)}
+
+/* ---------- marquee ---------- */
+.marquee{border-block:1px solid var(--line);overflow:hidden;padding:22px 0;background:var(--bg)}
+.marquee-track{display:flex;gap:56px;width:max-content;animation:marq 38s linear infinite}
+.marquee span{display:flex;align-items:center;gap:56px;font-family:var(--display);font-weight:300;font-size:clamp(20px,2.2vw,30px);letter-spacing:-.02em;color:var(--muted);white-space:nowrap}
+.marquee span::after{content:"";width:9px;height:9px;border-radius:50%;background:var(--orange);box-shadow:0 0 16px var(--orange)}
+@keyframes marq{to{transform:translateX(-50%)}}
+
+/* ---------- sections ---------- */
+section{position:relative}
+.wrap{padding:0 var(--gutter);max-width:1440px;margin:0 auto}
+.kicker{font-family:var(--mono);font-size:11.5px;letter-spacing:.26em;text-transform:uppercase;color:var(--dim);display:flex;gap:14px;align-items:center}
+.kicker em{font-style:normal;color:var(--cyan)}
+.h2{font-family:var(--display);font-weight:400;font-size:clamp(32px,4.4vw,64px);line-height:1.05;letter-spacing:-.035em}
+.h2 .soft{color:var(--dim)}
+
+.reveal{opacity:0;transform:translateY(40px);transition:opacity 1.3s var(--ease),transform 1.3s var(--ease)}
+.reveal.in{opacity:1;transform:none}
+
+/* manifesto */
+.manifesto{padding:clamp(110px,20vh,220px) 0 clamp(90px,14vh,160px)}
+.manifesto .big{font-family:var(--display);font-weight:400;font-size:clamp(40px,8.4vw,140px);line-height:.98;letter-spacing:-.05em;margin-top:40px}
+.manifesto .big .row{display:block}
+.manifesto .big .row:nth-child(2){padding-left:12vw}
+.manifesto .big .row:nth-child(3){padding-left:4vw}
+.manifesto .w{color:rgba(244,247,251,.1);transition:color .5s}
+.manifesto .w.lit{color:var(--ink)}
+.manifesto .w.or.lit{color:var(--orange);text-shadow:0 0 40px rgba(255,72,0,.35)}
+.manifesto .w.cy.lit{color:var(--cyan);text-shadow:0 0 40px rgba(130,231,238,.3)}
+.manifesto-foot{display:grid;grid-template-columns:1fr;gap:40px;margin-top:clamp(60px,10vh,120px);padding-top:30px;border-top:1px solid var(--line)}
+.manifesto-foot p{color:var(--muted);max-width:30em;font-size:17px}
+.partners{display:flex;align-items:center;justify-content:flex-end;gap:16px;font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--dim);text-transform:uppercase}
+.partners img{height:44px;width:auto;opacity:.85}
+
+/* how it works */
+.how{padding:clamp(80px,14vh,160px) 0}
+.how-head{display:grid;grid-template-columns:1fr auto;align-items:end;gap:32px;margin-bottom:64px}
+.how-head p{max-width:24em;color:var(--muted)}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.card{--mx:50%;--my:0%;position:relative;padding:34px 30px 30px;border-radius:24px;border:1px solid var(--line);min-height:420px;display:flex;flex-direction:column;overflow:hidden;isolation:isolate;
+  background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.008));transition:border-color .5s,transform .8s var(--ease)}
+.card::before{content:"";position:absolute;inset:0;z-index:-1;background:radial-gradient(420px circle at var(--mx) var(--my),rgba(130,231,238,.12),transparent 55%);opacity:0;transition:opacity .5s}
+.card:hover::before{opacity:1}
+.card:hover{border-color:rgba(130,231,238,.3)}
+.card .num{display:flex;justify-content:space-between;font-family:var(--mono);font-size:12px;letter-spacing:.2em;color:var(--dim)}
+.card .num b{color:var(--cyan);font-weight:500}
+.card .icon{width:76px;height:76px;margin:46px 0 auto;border-radius:20px;display:grid;place-items:center;border:1px solid var(--line-2);background:radial-gradient(circle at 30% 20%,rgba(130,231,238,.18),rgba(6,16,28,.4) 70%)}
+.card .icon svg{width:34px;height:34px;stroke:var(--cyan);fill:none;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round}
+.card .icon svg .o{stroke:var(--orange)}
+.card h3{font-family:var(--display);font-weight:400;font-size:24px;letter-spacing:-.025em;line-height:1.15;margin:40px 0 14px}
+.card p{color:var(--muted);font-size:15px}
+.card .bar{margin-top:26px;height:2px;border-radius:2px;background:var(--line);overflow:hidden}
+.card .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--cyan-2),var(--orange));transition:width 1.6s var(--ease) .3s}
+.card.in .bar i{width:var(--w,40%)}
+.card:nth-child(2){transition-delay:.12s}.card:nth-child(3){transition-delay:.24s}
+.specialist{margin-top:18px;display:flex;align-items:center;gap:20px;padding:22px 28px;border-radius:20px;border:1px solid rgba(255,72,0,.25);
+  background:linear-gradient(90deg,rgba(255,72,0,.1),rgba(255,72,0,.02) 60%)}
+.specialist .ic{flex:none;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:rgba(255,72,0,.15);color:var(--orange)}
+.specialist .ic svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.6}
+.specialist p{font-size:16px}
+
+/* prototype */
+.proto{padding:clamp(60px,10vh,120px) 0 clamp(80px,14vh,160px)}
+.proto-box{position:relative;border-radius:36px;border:1px solid var(--line);overflow:hidden;display:grid;grid-template-columns:1.05fr .95fr;min-height:640px;isolation:isolate;
+  background:radial-gradient(900px 500px at 85% 20%,rgba(42,215,228,.12),transparent 60%),radial-gradient(700px 500px at 10% 110%,rgba(255,72,0,.12),transparent 60%),var(--bg-2)}
+.proto-box::before{content:"";position:absolute;inset:0;z-index:-1;opacity:.5;
+  background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:56px 56px;
+  mask-image:radial-gradient(ellipse at 70% 40%,#000 0%,transparent 70%);-webkit-mask-image:radial-gradient(ellipse at 70% 40%,#000 0%,transparent 70%)}
+.proto-copy{padding:clamp(36px,5vw,72px);display:flex;flex-direction:column;justify-content:space-between;gap:40px}
+.proto-copy .h2{margin-top:24px}
+.proto-copy p{color:var(--muted);max-width:26em;margin-top:22px}
+.badge{display:inline-flex;align-items:center;gap:10px;padding:8px 14px;border-radius:999px;border:1px solid rgba(130,231,238,.3);background:rgba(130,231,238,.06);font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--cyan);width:max-content}
+.proto-visual{position:relative;display:grid;place-items:center;padding:40px 20px;perspective:1400px}
+.phone{position:relative;width:300px;height:610px;border-radius:48px;padding:12px;background:linear-gradient(160deg,#1c2a3a,#070d16 40%,#111c29);
+  box-shadow:0 0 0 1px rgba(171,194,199,.22),0 60px 120px -30px rgba(0,0,0,.8),0 0 80px -20px rgba(42,215,228,.3);
+  transform:rotateY(-14deg) rotateX(6deg) rotateZ(2deg);transition:transform 1.2s var(--ease)}
+.proto-box:hover .phone{transform:rotateY(-6deg) rotateX(3deg) rotateZ(0)}
+.screen{position:relative;width:100%;height:100%;border-radius:38px;overflow:hidden;background:linear-gradient(180deg,#071322,#030812);display:flex;flex-direction:column}
+.notch{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:92px;height:26px;border-radius:20px;background:#000;z-index:2}
+.app-top{padding:50px 18px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line)}
+.app-top .av{width:34px;height:34px;border-radius:50%;background:url(assets/panda-poster.jpg) 72% 20%/520% auto;border:1px solid rgba(130,231,238,.45)}
+.app-top b{font-size:13.5px;font-weight:600;display:block;line-height:1.2}
+.app-top small{font-size:11px;color:var(--cyan)}
+.chat{flex:1;padding:16px 14px;display:flex;flex-direction:column;gap:10px;justify-content:flex-end}
+.msg{max-width:84%;padding:10px 13px;border-radius:16px;font-size:12.5px;line-height:1.45;opacity:0;transform:translateY(12px) scale(.97);transition:opacity .7s var(--ease),transform .7s var(--ease)}
+.msg.show{opacity:1;transform:none}
+.msg.ai{background:rgba(130,231,238,.08);border:1px solid rgba(130,231,238,.18);border-bottom-left-radius:4px;color:#d6e5ef}
+.msg.me{align-self:flex-end;background:var(--orange);color:#fff;border-bottom-right-radius:4px}
+.typing{display:flex;gap:4px;padding:12px 14px;width:max-content;border-radius:16px;background:rgba(130,231,238,.08);border:1px solid rgba(130,231,238,.18);opacity:0;transition:opacity .4s}
+.typing.show{opacity:1}
+.typing i{width:6px;height:6px;border-radius:50%;background:var(--cyan);animation:tp 1s infinite}
+.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+@keyframes tp{0%,100%{opacity:.3;transform:translateY(0)}50%{opacity:1;transform:translateY(-3px)}}
+.app-input{margin:0 12px 16px;padding:12px 14px;border-radius:999px;border:1px solid var(--line-2);font-size:12px;color:var(--dim);display:flex;justify-content:space-between;align-items:center}
+.app-input i{width:26px;height:26px;border-radius:50%;background:var(--cyan)}
+.chip{position:absolute;z-index:2;padding:12px 16px;border-radius:16px;border:1px solid var(--line-2);background:rgba(6,16,28,.92);font-size:12.5px;box-shadow:0 20px 40px -20px rgba(0,0,0,.7);animation:float 7s ease-in-out infinite}
+.chip small{display:block;font-family:var(--mono);font-size:9.5px;letter-spacing:.18em;color:var(--dim);text-transform:uppercase;margin-bottom:4px}
+.chip .spark{display:flex;align-items:flex-end;gap:3px;height:26px;margin-top:6px}
+.chip .spark i{width:6px;border-radius:2px;background:linear-gradient(var(--cyan),rgba(130,231,238,.2))}
+.chip.c1{top:14%;right:calc(50% + 136px)}
+.chip.c2{bottom:12%;left:calc(50% + 136px);max-width:190px;animation-delay:-3s}
+@media (max-width:1240px) and (min-width:1081px){.chip{display:none}}
+.chip.c2 b{color:var(--orange)}
+@keyframes float{50%{transform:translateY(-14px)}}
+
+/* faq */
+.faq{padding:clamp(60px,10vh,120px) 0}
+.faq-grid{display:grid;grid-template-columns:.8fr 1.2fr;gap:clamp(32px,6vw,100px)}
+.faq-grid .h2{position:sticky;top:120px}
+.qa{border-top:1px solid var(--line)}
+.qa:last-child{border-bottom:1px solid var(--line)}
+.qa button{width:100%;display:flex;justify-content:space-between;align-items:center;gap:24px;padding:30px 0;text-align:left;font-family:var(--display);font-weight:400;font-size:clamp(18px,1.7vw,24px);letter-spacing:-.02em;transition:color .3s}
+.qa button:hover{color:var(--cyan)}
+.qa .pm{flex:none;position:relative;width:40px;height:40px;border-radius:50%;border:1px solid var(--line-2);transition:background .4s,border-color .4s,transform .6s var(--ease)}
+.qa .pm::before,.qa .pm::after{content:"";position:absolute;left:50%;top:50%;width:13px;height:1.5px;background:currentColor;transform:translate(-50%,-50%)}
+.qa .pm::after{transform:translate(-50%,-50%) rotate(90deg);transition:transform .5s var(--ease)}
+.qa.open .pm{background:var(--orange);border-color:var(--orange);transform:rotate(180deg)}
+.qa.open .pm::after{transform:translate(-50%,-50%) rotate(0)}
+.qa .ans{display:grid;grid-template-rows:0fr;transition:grid-template-rows .6s var(--ease)}
+.qa.open .ans{grid-template-rows:1fr}
+.qa .ans>div{overflow:hidden}
+.qa .ans p{padding:0 60px 30px 0;color:var(--muted);font-size:16.5px;max-width:36em}
+
+/* final cta */
+.final{padding:clamp(80px,14vh,160px) 0 0}
+.final-box{position:relative;border-radius:40px;overflow:hidden;min-height:620px;display:flex;align-items:flex-end;isolation:isolate;border:1px solid var(--line)}
+.final-box .bgimg{position:absolute;top:0;bottom:0;right:0;width:64%;z-index:-2;background:url(assets/panda.jpg) 50% 16%/cover no-repeat;transform:scale(1.15);transition:transform 2s var(--ease)}
+.final-box.in .bgimg{transform:scale(1)}
+.final-box::after{content:"";position:absolute;inset:0;z-index:-1;background:
+  linear-gradient(90deg,rgba(3,8,18,.96) 0%,rgba(3,8,18,.8) 40%,rgba(3,8,18,.25) 75%),
+  linear-gradient(0deg,rgba(3,8,18,.9),rgba(3,8,18,0) 50%)}
+.final-content{padding:clamp(32px,5vw,72px);width:100%;display:grid;grid-template-columns:1.3fr 1fr;align-items:end;gap:40px}
+.final .giant{font-family:var(--display);font-weight:400;font-size:clamp(46px,7vw,112px);line-height:.95;letter-spacing:-.05em;margin:24px 0 34px}
+.contact-list{display:flex;flex-direction:column;gap:2px;justify-self:end;min-width:min(100%,320px)}
+.contact-list a{display:flex;justify-content:space-between;align-items:center;gap:24px;padding:18px 4px;border-bottom:1px solid var(--line-2);font-size:16px;transition:color .3s,padding .5s var(--ease)}
+.contact-list a:hover{color:var(--cyan);padding-left:12px}
+.contact-list a span{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--dim);text-transform:uppercase}
+
+/* partner logos (as on the original site) */
+.companies{max-width:1440px;margin:clamp(70px,10vh,120px) auto 0;padding:0 var(--gutter)}
+.companies-row{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:clamp(28px,6vw,88px);padding:34px 0;border-block:1px solid var(--line)}
+.companies-row img{display:block;height:auto;opacity:.82;transition:opacity .4s,transform .6s var(--ease)}
+.companies-row img:hover{opacity:1;transform:translateY(-2px)}
+.companies-row .nl{width:112px}
+.companies-row .ugs{width:96px}
+.companies-row .intex{width:150px}
+.companies .kicker{justify-content:center;margin-bottom:22px}
+footer{padding:56px var(--gutter) 40px;max-width:1440px;margin:0 auto}
+.made-by{display:inline-flex;align-items:center;gap:14px;margin-top:22px;padding:10px 16px 10px 12px;border:1px solid var(--line);border-radius:14px;
+  font-size:12.5px;line-height:1.35;color:var(--dim);transition:border-color .4s,color .4s,background .4s}
+.made-by img{height:40px;width:auto;opacity:.92;transition:opacity .4s}
+.made-by b{display:block;font-weight:600;color:var(--muted);font-size:13.5px;transition:color .4s}
+.made-by:hover{border-color:rgba(130,231,238,.35);background:rgba(130,231,238,.04)}
+.made-by:hover b{color:var(--ink)}.made-by:hover img{opacity:1}
+.foot-row{display:flex;flex-wrap:wrap;justify-content:space-between;gap:20px;align-items:center;font-size:13.5px;color:var(--dim)}
+.foot-row a:hover{color:var(--ink)}
+.foot-links{display:flex;gap:24px;flex-wrap:wrap}
+.wordmark{font-family:var(--display);font-weight:500;font-size:clamp(56px,15.5vw,250px);letter-spacing:-.06em;white-space:nowrap;line-height:.8;margin:20px 0 40px;text-align:center;
+  background:linear-gradient(180deg,rgba(244,247,251,.12),rgba(244,247,251,0) 85%);-webkit-background-clip:text;background-clip:text;color:transparent;user-select:none}
+.disclaimer{font-size:12.5px;color:var(--dim);margin-top:18px}
+
+/* ---------- dialog ---------- */
+dialog{margin:auto;border:1px solid var(--line-2);border-radius:28px;padding:0;color:var(--ink);background:linear-gradient(180deg,#0b1826,#050c16);width:min(520px,calc(100% - 32px));
+  box-shadow:0 40px 120px -20px rgba(0,0,0,.9),0 0 0 1px rgba(255,255,255,.02),0 0 80px -30px rgba(255,72,0,.5);overflow:hidden}
+dialog::backdrop{background:rgba(1,4,10,.7);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+dialog[open]{animation:dlg .7s var(--ease)}
+dialog[open]::backdrop{animation:fadebg .5s ease}
+@keyframes dlg{from{opacity:0;transform:translateY(30px) scale(.96)}}
+@keyframes fadebg{from{opacity:0}}
+.dlg-head{position:relative;padding:34px 34px 0}
+.dlg-head .h{font-family:var(--display);font-weight:400;font-size:28px;letter-spacing:-.03em;line-height:1.1;margin-top:14px}
+.dlg-close{position:absolute;top:22px;right:22px;width:40px;height:40px;border-radius:50%;border:1px solid var(--line-2);font-size:20px;line-height:1;transition:background .3s,transform .5s var(--ease)}
+.dlg-close:hover{background:rgba(255,255,255,.07);transform:rotate(90deg)}
+form{padding:26px 34px 34px;display:flex;flex-direction:column;gap:16px}
+.field{position:relative}
+.field input,.field textarea{width:100%;padding:24px 18px 10px;border-radius:16px;border:1px solid var(--line-2);background:rgba(3,8,18,.6);color:var(--ink);font:inherit;font-size:15px;outline:none;resize:none;transition:border-color .3s,box-shadow .3s}
+.field textarea{min-height:120px}
+.field label{position:absolute;left:18px;top:17px;color:var(--dim);font-size:15px;pointer-events:none;transition:all .3s var(--ease)}
+.field input:focus,.field textarea:focus{border-color:rgba(130,231,238,.6);box-shadow:0 0 0 4px rgba(130,231,238,.08)}
+.field input:focus+label,.field input:not(:placeholder-shown)+label,.field textarea:focus+label,.field textarea:not(:placeholder-shown)+label{top:8px;font-size:11px;letter-spacing:.06em;color:var(--cyan)}
+.consent{display:flex;gap:12px;font-size:13px;color:var(--muted);align-items:flex-start;cursor:pointer}
+.consent input{appearance:none;-webkit-appearance:none;flex:none;width:20px;height:20px;border-radius:6px;border:1px solid var(--line-2);margin-top:1px;display:grid;place-items:center;transition:background .3s,border-color .3s}
+.consent input:checked{background:var(--orange);border-color:var(--orange)}
+.consent input:checked::after{content:"";width:6px;height:10px;border:solid #fff;border-width:0 2px 2px 0;transform:translateY(-1px) rotate(45deg)}
+.consent a{color:var(--ink);text-decoration:underline;text-decoration-color:var(--line-2);text-underline-offset:3px}
+form .btn{justify-content:center;margin-top:6px}
+.dlg-mail{padding:16px 34px;border-top:1px solid var(--line);font-size:13px;color:var(--dim);display:flex;justify-content:space-between}
+.dlg-mail a{color:var(--cyan)}
+.sent{display:none;padding:10px 34px 40px;text-align:center}
+.sent .ok{width:72px;height:72px;margin:10px auto 22px;border-radius:50%;display:grid;place-items:center;background:rgba(130,231,238,.12);border:1px solid rgba(130,231,238,.4)}
+.sent .ok svg{width:30px;height:30px;stroke:var(--cyan);fill:none;stroke-width:2;stroke-dasharray:40;stroke-dashoffset:40;animation:draw .8s var(--ease) .2s forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+.sent p{color:var(--muted);margin-top:10px}
+dialog.done form,dialog.done .dlg-head p.eyebrow~.h{display:none}
+dialog.done .sent{display:block}
+
+/* cookie */
+.cookie{position:fixed;left:var(--gutter);bottom:20px;z-index:70;max-width:420px;padding:18px 20px;border-radius:20px;border:1px solid var(--line-2);background:rgba(6,16,28,.96);
+  font-size:13px;color:var(--muted);box-shadow:0 30px 60px -20px rgba(0,0,0,.8);transform:translateY(140%);transition:transform 1s var(--ease)}
+.cookie.show{transform:none}
+.cookie a{color:var(--cyan)}
+.cookie .acts{display:flex;gap:8px;margin-top:14px}
+.cookie button{padding:9px 16px;border-radius:999px;border:1px solid var(--line-2);font-size:13px;transition:background .3s}
+.cookie button:first-child{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.cookie button:hover{background:rgba(255,255,255,.08)}
+.cookie button:first-child:hover{background:var(--cyan);border-color:var(--cyan)}
+
+/* ---------- responsive ---------- */
+@media (max-width:1080px){
+  .nav{display:none}
+  .cards{grid-template-columns:1fr}
+  .card{min-height:0}
+  .card .icon{margin:30px 0 0}
+  .proto-box{grid-template-columns:1fr}
+  .faq-grid{grid-template-columns:1fr}
+  .faq-grid .h2{position:static}
+  .final-content{grid-template-columns:1fr}
+  .contact-list{justify-self:stretch}
+}
+@media (max-width:760px){
+  .header{padding-top:14px;padding-bottom:14px}
+  .header .mail{display:none}
+  .brand{font-size:18px}.brand img{width:28px;height:30px}
+  .hero{display:block;min-height:0}
+  .hero-media{position:relative;height:66svh;height:66vh;inset:auto}
+  .hero-media video{object-position:70% 30%}
+  .hero-shade{background:linear-gradient(0deg,var(--bg) 0%,rgba(3,8,18,.75) 22%,rgba(3,8,18,0) 50%),linear-gradient(180deg,rgba(3,8,18,.75) 0%,rgba(3,8,18,0) 22%);height:66vh;height:66svh}
+  .hero-inner{grid-template-columns:1fr;margin-top:-20vh;position:relative;gap:0;padding-top:0;padding-bottom:56px}
+  .panda-hit{left:14%;right:8%;top:8%;bottom:auto;height:52vh;height:52svh}
+  h1{margin:18px 0}
+  .seg{display:flex;width:100%}
+  .seg button{flex:1;padding:11px 10px}
+  .btn{width:100%;justify-content:space-between}
+  .manifesto .big .row:nth-child(2),.manifesto .big .row:nth-child(3){padding-left:0}
+  .manifesto-foot{grid-template-columns:1fr}
+  .partners{justify-content:flex-start}
+  .how-head{grid-template-columns:1fr}
+  .proto-box,.final-box{border-radius:26px}
+  .phone{width:250px;height:510px;border-radius:40px;transform:none}
+  .chip{display:none}
+  .qa .ans p{padding-right:0}
+  .final-box{min-height:560px}
+  .final-box .bgimg{width:100%;background-position:60% 12%}
+  .final-box::after{background:linear-gradient(0deg,rgba(3,8,18,.98) 30%,rgba(3,8,18,.4) 75%,rgba(3,8,18,.2))}
+  .cookie{left:16px;right:16px;max-width:none}
+  .foot-row{flex-direction:column;align-items:flex-start}
+  .companies-row{gap:28px 40px}
+  .companies-row .nl{width:96px}.companies-row .ugs{width:76px}.companies-row .intex{width:122px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+}
+</style>
+</head>
+<body class="is-loading">
+<div class="grain" aria-hidden="true"></div>
+
+<!-- Preloader -->
+<div class="loader" id="loader" aria-hidden="true">
+  <div class="loader-inner">
+    <div class="loader-mark">
+      <img src="assets/redpanda-mark.svg" alt="">
+      <div class="fill" id="loaderFill"><img src="assets/redpanda-mark.svg" alt=""></div>
+    </div>
+    <div class="loader-meta"><span>RedPanda</span><b id="loaderPct">0</b><span>%</span></div>
+  </div>
+</div>
+
+<!-- Header -->
+<header class="header" id="header">
+  <a class="brand" href="#top" aria-label="RedPanda"><img src="assets/redpanda-mark.svg" alt=""><div><span>Red</span>Panda</div></a>
+  <nav class="nav" aria-label="Разделы">
+    <a href="#about">О проекте</a>
+    <a href="#how">Как работает</a>
+    <a href="#proto">Прототип</a>
+    <a href="#faq">Вопросы</a>
+  </nav>
+  <div class="header-right">
+    <div class="lang"><a class="on" href="./" aria-current="page">RU</a><a href="en/" hreflang="en">EN</a></div>
+  </div>
+</header>
+
+<main id="top">
+  <!-- HERO -->
+  <section class="hero" id="hero">
+    <div class="hero-media">
+      <div class="stage" id="stage">
+        <video id="idle" autoplay muted loop playsinline preload="auto" poster="assets/panda-poster.jpg" src="assets/panda-idle-v1.mp4" aria-hidden="true"></video>
+        <video id="talk" class="talk" playsinline preload="none" src="assets/panda-talk.mp4" aria-hidden="true"></video>
+      </div>
+    </div>
+    <div class="hero-dim" id="heroDim"></div>
+    <div class="hero-shade"></div>
+    <canvas id="embers" aria-hidden="true"></canvas>
+    <div class="hero-glow" id="glow" aria-hidden="true"></div>
+    <button class="panda-hit" id="pandaHit" type="button" aria-label="Послушать панду"></button>
+
+    <div class="hero-inner">
+      <div>
+        <div class="eyebrow fade d1"><span>Поддержка при зависимости</span></div>
+        <h1>
+          <span class="line"><span>Зависимость</span></span>
+          <span class="line"><span>касается</span></span>
+          <span class="line"><span class="accent">тебя или близкого?</span></span>
+        </h1>
+        <p class="lead fade d2"><strong>RedPanda</strong> — ИИ-платформа поддержки восстановления от зависимости. Сейчас в разработке.</p>
+
+        <div class="seg fade d3" role="group" aria-label="Для кого">
+          <span class="pill" id="segPill"></span>
+          <button type="button" aria-pressed="true" data-aud="self">Для себя</button>
+          <button type="button" aria-pressed="false" data-aud="close">Для близкого</button>
+        </div>
+        <div class="aud-text fade d3"><p id="audText">После лечения или когда хотите разобраться в употреблении и двигаться к трезвой жизни.</p></div>
+
+        <div class="cta-row fade d4">
+          <button class="btn" data-open><span>Подать заявку в пилот</span><span class="arr" aria-hidden="true">↗</span></button>
+          <a class="btn-ghost" href="https://redpanda-proto.web.app/" target="_blank" rel="noopener">Посмотреть прототип ↗</a>
+        </div>
+        <p class="note fade d5">Имя и фамилия не нужны — оставьте контакт, чтобы мы могли ответить.</p>
+      </div>
+    </div>
+    <div class="hero-foot"></div>
+  </section>
+
+  <div class="marquee" aria-hidden="true">
+    <div class="marquee-track">
+      <span>Знание рядом</span><span>Решение за тобой</span><span>Ещё один шаг</span><span>Набор в пилот открыт</span><span>Для себя и для близких</span>
+      <span>Знание рядом</span><span>Решение за тобой</span><span>Ещё один шаг</span><span>Набор в пилот открыт</span><span>Для себя и для близких</span>
+    </div>
+  </div>
+
+  <!-- MANIFESTO -->
+  <section class="manifesto" id="about">
+    <div class="wrap">
+      <div class="kicker reveal"><em>01</em> RedPanda / Nonsense Labs</div>
+      <h2 class="big" id="manifesto">
+        <span class="row"><span class="w">Знание</span> <span class="w cy">рядом.</span></span>
+        <span class="row"><span class="w">Решение</span> <span class="w">за</span> <span class="w or">тобой.</span></span>
+        <span class="row"><span class="w">Ещё</span> <span class="w">один</span> <span class="w">шаг.</span></span>
+      </h2>
+      <div class="manifesto-foot reveal">
+        <p>RedPanda разрабатывается Nonsense Labs. Готовим пилот платформы и приглашаем в него людей с зависимостью и их близких.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW -->
+  <section class="how" id="how">
+    <div class="wrap">
+      <div class="how-head">
+        <div>
+          <div class="kicker reveal"><em>02</em> Как работает RedPanda</div>
+          <h2 class="h2 reveal" style="margin-top:24px">Разобраться. Действовать.<br><span class="soft">Видеть изменения.</span></h2>
+        </div>
+        <p class="reveal">Три шага, которые помогают перейти от самоанализа к практике — в своём темпе.</p>
+      </div>
+      <div class="cards">
+        <article class="card reveal" style="--w:38%">
+          <div class="num"><b>01</b><span>Разобраться</span></div>
+          <div class="icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/><path class="o" d="M8.5 11h5M11 8.5v5"/></svg></div>
+          <h3>Непредвзятый анализ вашей ситуации</h3>
+          <p>ИИ помогает разобраться в происходящем с опорой на базу клинических знаний и историю общения: замечать повторяющиеся реакции, возможные триггеры и противоречия, которые трудно увидеть самостоятельно.</p>
+          <div class="bar"><i></i></div>
+        </article>
+        <article class="card reveal" style="--w:68%">
+          <div class="num"><b>02</b><span>Действовать</span></div>
+          <div class="icon"><svg viewBox="0 0 24 24"><path d="M4 18c3-1 4-4 6-7s4-5 10-5"/><path class="o" d="M16 3l4 3-3 4"/><circle cx="4" cy="18" r="1.5"/></svg></div>
+          <h3>Конкретный следующий шаг</h3>
+          <p>Предлагает действия для поддержки восстановления с учётом вашей ситуации. Помогает перейти от самоанализа к практике.</p>
+          <div class="bar"><i></i></div>
+        </article>
+        <article class="card reveal" style="--w:92%">
+          <div class="num"><b>03</b><span>Видеть</span></div>
+          <div class="icon"><svg viewBox="0 0 24 24"><path d="M3 20h18"/><path d="M6 16v-3M10 16v-6M14 16v-4M18 16V7"/><path class="o" d="M5 9l5-4 4 3 5-5"/></svg></div>
+          <h3>Видеть изменения</h3>
+          <p>Показывает динамику состояния и выполненных действий, подводит итоги и помогает подготовиться к разговору со специалистом.</p>
+          <div class="bar"><i></i></div>
+        </article>
+      </div>
+      <div class="specialist reveal">
+        <span class="ic"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.6-7 10-7 10z"/></svg></span>
+        <p>На этапе пилота поможем организовать очную консультацию со специалистом.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROTOTYPE -->
+  <section class="proto" id="proto">
+    <div class="wrap">
+      <div class="proto-box reveal">
+        <div class="proto-copy">
+          <div>
+            <span class="badge"><span class="dot"></span>Приложение в разработке</span>
+            <h2 class="h2">Посмотрите, каким будет RedPanda</h2>
+            <p>Кликабельная демонстрация интерфейса: как выглядит разговор, следующий шаг и динамика изменений.</p>
+          </div>
+          <div class="cta-row" style="margin-top:0">
+            <a class="btn" href="https://redpanda-proto.web.app/" target="_blank" rel="noopener"><span>Открыть прототип</span><span class="arr" aria-hidden="true">↗</span></a>
+          </div>
+        </div>
+        <div class="proto-visual">
+          <div class="chip c1"><small>Динамика</small>Последние 7 дней
+            <div class="spark"><i style="height:30%"></i><i style="height:45%"></i><i style="height:38%"></i><i style="height:60%"></i><i style="height:55%"></i><i style="height:78%"></i><i style="height:92%"></i></div>
+          </div>
+          <div class="phone">
+            <div class="screen">
+              <div class="notch"></div>
+              <div class="app-top"><span class="av"></span><div><b>RedPanda</b><small>● на связи</small></div></div>
+              <div class="chat" id="chat">
+                <div class="msg ai">Привет. Как прошёл день? Можно коротко.</div>
+                <div class="msg me">Вечером снова тянуло. Не сорвался, но тяжело.</div>
+                <div class="msg ai">Вы справились — это важно. Похоже, вечер после работы повторяется уже третий раз. Разберём, что ему предшествует?</div>
+                <div class="msg me">Давай</div>
+                <div class="typing" id="typing"><i></i><i></i><i></i></div>
+              </div>
+              <div class="app-input">Написать…<i></i></div>
+            </div>
+          </div>
+          <div class="chip c2"><small>Следующий шаг</small><b>●</b> Прогулка 20 минут после работы</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="faq" id="faq">
+    <div class="wrap faq-grid">
+      <div>
+        <div class="kicker reveal"><em>03</em> Вопросы о пилоте</div>
+        <h2 class="h2 reveal" style="margin-top:24px">Коротко<br><span class="soft">о главном</span></h2>
+      </div>
+      <div class="reveal">
+        <div class="qa open"><button type="button" aria-expanded="true">RedPanda уже доступна?<span class="pm"></span></button><div class="ans"><div><p>Платформа в разработке. Сейчас собираем заявки для отбора участников пилота.</p></div></div></div>
+        <div class="qa"><button type="button" aria-expanded="false">Как попасть в пилот?<span class="pm"></span></button><div class="ans"><div><p>Оставьте контакт и коротко расскажите, почему хотите участвовать. Мы свяжемся с вами и обсудим условия.</p></div></div></div>
+        <div class="qa"><button type="button" aria-expanded="false">RedPanda заменяет специалиста?<span class="pm"></span></button><div class="ans"><div><p>Нет. Платформа создаётся как дополнительный инструмент поддержки, а не замена врачу или психотерапии.</p></div></div></div>
+        <div class="qa"><button type="button" aria-expanded="false">Можно подать заявку, если проблема у близкого?<span class="pm"></span></button><div class="ans"><div><p>Да. Заявки принимаем и от близких людей с зависимостью. Формат участия и доступные функции обсудим при отборе.</p></div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FINAL CTA -->
+  <section class="final">
+    <div class="wrap">
+      <div class="final-box reveal" id="finalBox">
+        <div class="bgimg"></div>
+        <div class="final-content">
+          <div>
+            <div class="kicker" style="color:var(--muted)"><em>04</em> Ранний доступ</div>
+            <h2 class="giant">Ещё один<br><span class="accent">шаг.</span></h2>
+            <button class="btn" data-open><span>Подать заявку в пилот</span><span class="arr" aria-hidden="true">↗</span></button>
+          </div>
+          <div class="contact-list">
+            <a href="mailto:gleb@nonsenselabs.net">gleb@nonsenselabs.net <span>Связь ↗</span></a>
+            <a href="https://drive.google.com/file/d/1bKS70DnWoXbvgAuyafQln1XqqCeRgmjV/view?usp=sharing" target="_blank" rel="noopener">Инвесторам <span>PDF ↗</span></a>
+            <a href="https://nonsenselabs.net/" target="_blank" rel="noopener">О компании <span>Nonsense Labs ↗</span></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PARTNER COMPANIES -->
+  <section class="companies" aria-label="Компании">
+    <div class="kicker reveal">Компании</div>
+    <div class="companies-row reveal">
+      <img class="nl" src="assets/nonsense-labs.png" alt="Nonsense Labs" width="120" height="60" loading="lazy" decoding="async">
+      <img class="ugs" src="assets/ugs.png" alt="UGS" width="96" height="40" loading="lazy" decoding="async">
+      <img class="intex" src="assets/intexsoft.svg" alt="IntexSoft" width="150" height="21" loading="lazy" decoding="async">
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wordmark" aria-hidden="true">RedPanda</div>
+  <div class="foot-row">
+    <span>© 2026 Nonsense Labs LLP</span>
+    <div class="foot-links">
+      <a href="https://redpanda-ai.net/privacy.html" target="_blank" rel="noopener">Политика конфиденциальности</a>
+      <a href="https://redpanda-ai.net/terms.html" target="_blank" rel="noopener">Условия использования</a>
+      <button type="button" id="cookieOpen" style="color:inherit">Настройки аналитики</button>
+    </div>
+  </div>
+  <p class="disclaimer">RedPanda не заменяет врача или психотерапию.</p>
+  <a class="made-by" href="https://r2day.kz" target="_blank" rel="noopener" aria-label="Сайт разработан компанией SkyMarketing">
+    <img src="assets/skymarketing.png" alt="SkyMarketing" width="49" height="40" loading="lazy" decoding="async">
+    <span>Сайт разработан компанией<b>SkyMarketing ↗</b></span>
+  </a>
+</footer>
+
+<!-- Dialog -->
+<dialog id="dlg" aria-labelledby="dlgTitle">
+  <div class="dlg-head">
+    <p class="eyebrow" style="color:var(--cyan)">RedPanda / Early access</p>
+    <h2 class="h" id="dlgTitle">Заявка в пилот RedPanda</h2>
+    <button class="dlg-close" type="button" aria-label="Закрыть" data-close>×</button>
+  </div>
+  <form id="form" novalidate>
+    <div class="field"><input id="contact" name="contact" required minlength="3" maxlength="254" placeholder=" " autocomplete="email"><label for="contact">Email, телефон или Telegram</label></div>
+    <div class="field"><textarea id="message" name="message" required minlength="3" maxlength="4000" placeholder=" "></textarea><label for="message">Почему хотите участвовать в пилоте</label></div>
+    <label class="consent"><input type="checkbox" required id="consent"><span>Согласен на обработку данных согласно <a href="https://redpanda-ai.net/privacy.html" target="_blank" rel="noopener">политике конфиденциальности</a> и принимаю <a href="https://redpanda-ai.net/terms.html" target="_blank" rel="noopener">условия использования</a>.</span></label>
+    <button class="btn" type="submit"><span>Отправить запрос</span><span class="arr" aria-hidden="true">↗</span></button>
+  </form>
+  <div class="sent">
+    <div class="ok"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+    <h3 class="h2" style="font-size:26px">Спасибо!</h3>
+    <p>Это макет — заявка никуда не отправлена.<br>В рабочей версии здесь подключается форма сайта.</p>
+  </div>
+  <div class="dlg-mail"><span>Или напишите напрямую</span><a href="mailto:gleb@nonsenselabs.net">gleb@nonsenselabs.net</a></div>
+</dialog>
+
+<div class="cookie" id="cookie" role="dialog" aria-label="Cookie">
+  Разрешить аналитические cookie для учёта посещений и заявок? Контакты и текст сообщений не передаются. <a href="https://redpanda-ai.net/privacy.html" target="_blank" rel="noopener">Конфиденциальность</a>
+  <div class="acts"><button type="button" data-ck>Разрешить</button><button type="button" data-ck>Отклонить</button></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
+<script>
+(() => {
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+
+  /* ---------- preloader ---------- */
+  const idle = $('#idle'), talk = $('#talk');
+  const pctEl = $('#loaderPct'), fill = $('#loaderFill');
+  let pct = 0, target = 30, videoReady = false, started = performance.now();
+  const markReady = () => { videoReady = true; };
+  if (idle.readyState >= 3) markReady();
+  idle.addEventListener('canplaythrough', markReady, { once: true });
+  idle.addEventListener('loadeddata', () => { target = Math.max(target, 70); }, { once: true });
+  function tick() {
+    const elapsed = performance.now() - started;
+    if (videoReady && elapsed > 900) target = 100;
+    else if (elapsed > 3200) target = 100; // never block the page
+    else target = Math.min(target + 0.25, 92);
+    pct += (target - pct) * 0.08;
+    if (target === 100 && pct > 99.4) pct = 100;
+    pctEl.textContent = Math.round(pct);
+    fill.style.clipPath = `inset(${100 - pct}% 0 0 0)`;
+    if (finished) return;
+    if (pct < 100) requestAnimationFrame(tick); else finish();
+  }
+  let finished = false;
+  function finish() {
+    if (finished) return; finished = true;
+    setTimeout(() => {
+      $('#loader').classList.add('out');
+      document.body.classList.remove('is-loading');
+      document.documentElement.classList.add('ready');
+      idle.play().catch(() => {});
+      // cookie notice waits until the visitor scrolls past the first screen — it never covers the hero CTA or the panda
+      const showCookie = () => { if (scrollY > hero.offsetHeight * .55) { $('#cookie').classList.add('show'); removeEventListener('scroll', showCookie); } };
+      addEventListener('scroll', showCookie, { passive: true });
+      setTimeout(() => $('#loader').remove(), 1500);
+    }, 250);
+  }
+  reduce ? (pct = 99, tick()) : requestAnimationFrame(tick);
+  // fallback if rAF is throttled (background tab)
+  setTimeout(() => { if (pct < 100) { pct = 100; finish(); } }, 4500);
+
+  /* ---------- smooth scroll ---------- */
+  let lenis = null;
+  if (window.Lenis && !reduce) {
+    lenis = new Lenis({ lerp: 0.12, smoothWheel: true });
+    const raf = t => { lenis.raf(t); requestAnimationFrame(raf); };
+    requestAnimationFrame(raf);
+  }
+  $$('a[href^="#"]').forEach(a => a.addEventListener('click', e => {
+    const id = a.getAttribute('href');
+    if (id.length < 2) return;
+    const el = $(id); if (!el) return;
+    e.preventDefault();
+    lenis ? lenis.scrollTo(el, { offset: -70 }) : el.scrollIntoView({ behavior: 'smooth' });
+  }));
+
+  /* ---------- scroll: one rAF-batched handler ---------- */
+  const header = $('#header'), stage = $('#stage'), hero = $('#hero'), dim = $('#heroDim'), glow = $('#glow');
+  let mx = 0, my = 0, ticking = false, heroVisible = true, parallax = false;
+  const words = $$('#manifesto .w'), man = $('#manifesto');
+  let manVisible = false;
+  function frame() {
+    ticking = false;
+    const y = scrollY;
+    header.classList.toggle('scrolled', y > 40);
+    if (parallax && heroVisible) {
+      const p = Math.min(y / hero.offsetHeight, 1);
+      stage.style.transform = `translate3d(${(mx * -14).toFixed(1)}px, ${(my * -10 + y * 0.25).toFixed(1)}px, 0) scale(${(1.04 + p * 0.1).toFixed(4)})`;
+      dim.style.opacity = (p * 0.6).toFixed(3);
+    }
+    if (manVisible) {
+      const r = man.getBoundingClientRect(), vh = innerHeight;
+      const q = Math.min(Math.max((vh * .85 - r.top) / (r.height + vh * .35), 0), 1);
+      const n = Math.round(q * words.length);
+      words.forEach((w, i) => w.classList.toggle('lit', i < n));
+    }
+  }
+  const request = () => { if (!ticking) { ticking = true; requestAnimationFrame(frame); } };
+  addEventListener('scroll', request, { passive: true });
+  new IntersectionObserver(([e]) => { manVisible = e.isIntersecting; request(); }, { rootMargin: '200px 0px' }).observe(man);
+  // pause hero video + embers when hero is off-screen
+  new IntersectionObserver(([e]) => {
+    heroVisible = e.isIntersecting;
+    const v = document.documentElement.classList.contains('talking') ? null : idle;
+    if (v) heroVisible ? v.play().catch(() => {}) : v.pause();
+  }).observe(hero);
+  // let the intro zoom finish before parallax takes over
+  setTimeout(() => {
+    stage.classList.add('settled');
+    if (reduce) return;
+    stage.style.transition = 'transform 1.2s var(--ease)';
+    parallax = true; request();
+    setTimeout(() => { stage.style.transition = 'none'; }, 1300);
+    if (matchMedia('(hover: hover)').matches) hero.addEventListener('mousemove', e => {
+      mx = e.clientX / innerWidth - .5; my = e.clientY / innerHeight - .5;
+      glow.style.transform = `translate3d(${e.clientX}px, ${e.clientY + scrollY - hero.offsetTop}px, 0)`;
+      request();
+    }, { passive: true });
+  }, 3400);
+  request();
+
+  /* ---------- embers (cheap sprites, paused off-screen) ---------- */
+  const cv = $('#embers'), ctx = cv.getContext('2d');
+  let W, H, parts = [], running = false;
+  const sprite = c => { const s = document.createElement('canvas'); s.width = s.height = 32; const g = s.getContext('2d');
+    const gr = g.createRadialGradient(16, 16, 0, 16, 16, 16); gr.addColorStop(0, `rgba(${c},1)`); gr.addColorStop(.25, `rgba(${c},.6)`); gr.addColorStop(1, `rgba(${c},0)`);
+    g.fillStyle = gr; g.fillRect(0, 0, 32, 32); return s; };
+  const sprites = { c: sprite('130,231,238'), o: sprite('255,110,40') };
+  function size() {
+    const dpr = Math.min(devicePixelRatio || 1, 1.5);
+    W = cv.offsetWidth; H = cv.offsetHeight; cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  function spawn(init) {
+    return { x: W * (.35 + Math.random() * .65), y: init ? Math.random() * H : H + 10, r: Math.random() * 5 + 3,
+      vy: -(Math.random() * .35 + .12), vx: (Math.random() - .5) * .15, a: Math.random() * .6 + .25, s: Math.random() < .35 ? 'c' : 'o', t: Math.random() * 6 };
+  }
+  function loop() {
+    if (!heroVisible || document.hidden) { running = false; return; }
+    ctx.clearRect(0, 0, W, H);
+    for (const p of parts) {
+      p.t += .02; p.x += p.vx + Math.sin(p.t) * .15; p.y += p.vy;
+      if (p.y < -10) Object.assign(p, spawn(false));
+      ctx.globalAlpha = p.a * Math.min(1, p.y / (H * .5));
+      ctx.drawImage(sprites[p.s], p.x - p.r, p.y - p.r, p.r * 2, p.r * 2);
+    }
+    requestAnimationFrame(loop);
+  }
+  const startEmbers = () => { if (!running && !reduce && heroVisible && !document.hidden) { running = true; requestAnimationFrame(loop); } };
+  if (!reduce) {
+    size(); parts = Array.from({ length: innerWidth < 760 ? 18 : 40 }, () => spawn(true));
+    let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(size, 150); });
+    new IntersectionObserver(([e]) => { heroVisible = e.isIntersecting; startEmbers(); }).observe(hero);
+    document.addEventListener('visibilitychange', startEmbers);
+    startEmbers();
+  }
+
+  /* ---------- audience toggle ---------- */
+  const copy = {
+    self: 'После лечения или когда хотите разобраться в употреблении и двигаться к трезвой жизни.',
+    close: 'Поддержка для себя, личные границы и общение с близким человеком.'
+  };
+  const pill = $('#segPill'), segBtns = $$('.seg button'), audText = $('#audText');
+  function placePill(b) { pill.style.width = b.offsetWidth + 'px'; pill.style.transform = `translateX(${b.offsetLeft - 5}px)`; }
+  segBtns.forEach(b => b.addEventListener('click', () => {
+    if (b.getAttribute('aria-pressed') === 'true') return;
+    segBtns.forEach(x => x.setAttribute('aria-pressed', x === b));
+    placePill(b);
+    audText.classList.add('swap');
+    setTimeout(() => { audText.textContent = copy[b.dataset.aud]; audText.classList.remove('swap'); }, 280);
+  }));
+  const placeActive = () => placePill($('.seg button[aria-pressed="true"]'));
+  addEventListener('resize', placeActive); document.fonts.ready.then(placeActive); placeActive();
+
+  /* ---------- talking panda ----------
+     panda-talk.mp4 is pre-rendered: the push-in, lip-synced speech and the new voice
+     are baked into one steady 30 fps file, so the browser only has to play it. */
+  const pandaHit = $('#pandaHit');
+  const html = document.documentElement;
+  let talking = false;
+  const warmTalk = () => { if (talk.preload !== 'auto') { talk.preload = 'auto'; talk.load(); } };
+  pandaHit.addEventListener('pointerenter', warmTalk, { once: true });
+  pandaHit.addEventListener('touchstart', warmTalk, { once: true, passive: true });
+  // warm it up quietly once the page is idle, so the first click starts instantly
+  addEventListener('load', () => setTimeout(() => (window.requestIdleCallback || setTimeout)(warmTalk), 6000));
+
+  function stopTalk() {
+    if (!talking) return;
+    talking = false;
+    idle.play().catch(() => {});                 // idle resumes under the fade
+    html.classList.remove('talking');
+    setTimeout(() => { if (!talking) talk.pause(); }, 650);
+    pandaHit.setAttribute('aria-label', 'Послушать панду');
+  }
+  function startTalk() {
+    talking = true;
+    pandaHit.setAttribute('aria-label', 'Остановить');
+    talk.muted = false;
+    if (talk.currentTime > 0) talk.currentTime = 0;
+    talk.play().catch(() => { talking = false; });   // called inside the click → sound allowed on iOS too
+  }
+  // show the talk layer only once real frames are flowing (no black flash)
+  talk.addEventListener('playing', () => {
+    if (!talking) return;
+    html.classList.add('talking');
+    setTimeout(() => { if (talking) idle.pause(); }, 650);  // one decoder at a time
+  });
+  talk.addEventListener('ended', stopTalk);
+  // tapping the panda starts / stops the talk
+  pandaHit.addEventListener('click', () => (talking ? stopTalk() : startTalk()));
+
+  /* ---------- magnetic buttons + highlight ---------- */
+  $$('.btn').forEach(b => {
+    b.addEventListener('mousemove', e => {
+      const r = b.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+      b.style.setProperty('--bx', x + 'px'); b.style.setProperty('--by', y + 'px');
+      if (!reduce) b.style.transform = `translate(${(x - r.width / 2) * .12}px, ${(y - r.height / 2) * .2}px)`;
+    });
+    b.addEventListener('mouseleave', () => { b.style.transform = ''; });
+    b.style.transition = 'transform .6s cubic-bezier(.16,1,.3,1), box-shadow .5s';
+  });
+
+  /* ---------- card spotlight ---------- */
+  $$('.card').forEach(c => c.addEventListener('mousemove', e => {
+    const r = c.getBoundingClientRect();
+    c.style.setProperty('--mx', e.clientX - r.left + 'px'); c.style.setProperty('--my', e.clientY - r.top + 'px');
+  }));
+
+  /* ---------- reveal on scroll ---------- */
+  const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: .18 });
+  $$('.reveal').forEach(el => io.observe(el));
+
+  /* ---------- chat demo ---------- */
+  const msgs = $$('#chat .msg'), typing = $('#typing');
+  let chatStarted = false;
+  function runChat() {
+    if (chatStarted) return; chatStarted = true;
+    let t = 300;
+    msgs.forEach((m, i) => {
+      if (m.classList.contains('ai') && i) { setTimeout(() => typing.classList.add('show'), t); t += 1100; setTimeout(() => typing.classList.remove('show'), t); }
+      setTimeout(() => m.classList.add('show'), t); t += 900;
+    });
+    setTimeout(() => typing.classList.add('show'), t);
+  }
+  new IntersectionObserver(es => es.forEach(e => e.isIntersecting && runChat()), { threshold: .4 }).observe($('.phone'));
+
+  /* ---------- faq ---------- */
+  $$('.qa button').forEach(b => b.addEventListener('click', () => {
+    const qa = b.parentElement, open = !qa.classList.contains('open');
+    $$('.qa').forEach(q => { q.classList.remove('open'); q.firstElementChild.setAttribute('aria-expanded', 'false'); });
+    if (open) { qa.classList.add('open'); b.setAttribute('aria-expanded', 'true'); }
+  }));
+
+  /* ---------- dialog ---------- */
+  const dlg = $('#dlg'), form = $('#form');
+  $$('[data-open]').forEach(b => b.addEventListener('click', () => { dlg.classList.remove('done'); dlg.showModal(); lenis && lenis.stop(); }));
+  $('[data-close]').addEventListener('click', () => dlg.close());
+  dlg.addEventListener('close', () => lenis && lenis.start());
+  dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    if (!form.checkValidity()) { form.reportValidity(); return; }
+    dlg.classList.add('done'); form.reset();
+  });
+
+  /* ---------- cookie ---------- */
+  $$('[data-ck]').forEach(b => b.addEventListener('click', () => $('#cookie').classList.remove('show')));
+  $('#cookieOpen').addEventListener('click', () => $('#cookie').classList.add('show'));
+})();
+</script>
+</body>
+</html>
